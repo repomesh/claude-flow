@@ -191,6 +191,22 @@ grep -q "execCli(\[\s*'-y'\s*,\s*'metaharness@latest'" "$F" 2>/dev/null || \
 grep -q "cwd: opts" "$F" || miss="$miss no-cwd-passthrough"
 [[ -z "$miss" ]] && ok || bad "$miss"
 
+step "17z43. upstream mcp-scan format compat tripwire (iter 80)"
+miss=""
+F="$ROOT/../../scripts/check-mcp-scan-format.mjs"
+[[ -x "$F" ]] || miss="$miss not-executable"
+node --check "$F" 2>/dev/null || miss="$miss syntax-error"
+# Tripwire asserts both upstream format invariants
+grep -q "finding line matches" "$F" 2>/dev/null || miss="$miss no-finding-line-check"
+grep -q "Result line matches" "$F" 2>/dev/null || miss="$miss no-result-line-check"
+grep -q "parseMcpScanText extracts at least 1 finding" "$F" 2>/dev/null || miss="$miss no-parser-roundtrip"
+# CI workflow runs it
+W="$ROOT/../../.github/workflows/metaharness-ci.yml"
+grep -q "check-mcp-scan-format.mjs" "$W" 2>/dev/null || miss="$miss not-in-ci"
+# Runtime: tripwire passes on ruflo's own audit
+node "$F" >/dev/null 2>&1 || miss="$miss tripwire-fails-locally"
+[[ -z "$miss" ]] && ok || bad "$miss"
+
 step "17z42. weekly cron uses --alert-on-new-severity + Stage 12 verifies (iter 79)"
 miss=""
 # Weekly cron wires the gate

@@ -345,6 +345,15 @@ jobs:
           npx -y metaharness@latest --version
           echo "✓ metaharness CLI warm"
 
+      - name: Upstream mcp-scan format invariants (iter 80 — protects iter-50 parser)
+        # If upstream `harness mcp-scan` ever changes its text format,
+        # iter-50's parseMcpScanText silently returns empty findings and
+        # iter-49's introduced/cleared diff regresses to dead code. This
+        # tripwire fails the workflow if the format invariant drifts.
+        run: |
+          node scripts/check-mcp-scan-format.mjs --format json
+          echo "✓ upstream text format compatible with parseMcpScanText"
+
       - name: End-to-end pipeline roundtrip (iter 47)
         # Must exit 0. Exit 2 means metaharness wasn't reachable (we just
         # warmed it, so that would be infra failure). Exit 1 means the
